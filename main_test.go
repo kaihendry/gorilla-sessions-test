@@ -1,7 +1,7 @@
 package main
 
 import (
-	"fmt"
+	"log"
 	"net/http"
 	"net/http/httptest"
 	"strings"
@@ -11,7 +11,6 @@ import (
 func TestCount(t *testing.T) {
 
 	w := httptest.NewRecorder()
-
 	r, err := http.NewRequest(http.MethodGet, "/", nil)
 	if err != nil {
 		panic(err)
@@ -20,18 +19,23 @@ func TestCount(t *testing.T) {
 	session, _ := store.Get(r, sessionName)
 	var role = "admin"
 
+	// we check for this role later in the table driven test
 	session.Values["role"] = role
+
+	log.Println("Setting up session", session.Values)
+
 	err = session.Save(r, w)
 	if err != nil {
 		panic(err)
 	}
-	fmt.Println(w.HeaderMap)
+
+	log.Println("cookie header", w.HeaderMap)
 	// convert w.HeaderMap to *http.Cookie
 	cookies := []*http.Cookie{}
 	for _, v := range w.HeaderMap["Set-Cookie"] {
 		cookies = append(cookies, &http.Cookie{
 			Name:  strings.Split(v, "=")[0],
-			Value: strings.Split(v, "=")[1],
+			Value: strings.Split(v, "=")[1] + "==",
 		})
 	}
 
@@ -59,7 +63,9 @@ func TestCount(t *testing.T) {
 			if err != nil {
 				panic(err)
 			}
+
 			if tt.cookie != nil {
+				log.Println("adding cookie", tt.cookie)
 				r.AddCookie(tt.cookie)
 			}
 			resp, err := client.Do(r)
@@ -67,7 +73,9 @@ func TestCount(t *testing.T) {
 			if resp.StatusCode != tt.expectedStatusCode {
 				t.Fatalf("got %d, want %d", resp.StatusCode, tt.expectedStatusCode)
 			}
+
 			role := resp.Header.Get("X-Role")
+			log.Println("role", role)
 			if !strings.Contains(role, tt.expectedHeader) {
 				t.Errorf("got %v, want %v", role, tt.expectedHeader)
 			}

@@ -22,9 +22,15 @@ type server struct {
 }
 
 func MyHandler(w http.ResponseWriter, r *http.Request) {
-	session, _ := store.Get(r, sessionName)
+	// show cookies on request
+	log.WithField("cookies", r.Cookies()).Info("request cookies")
+	session, err := store.Get(r, sessionName)
+	if err != nil {
+		log.WithError(err).Error("error getting session")
+	}
 
-	log.WithField("session", session).Info("session")
+	log.WithField("MyHandler session", session).Info("session")
+	log.WithField("MyHandler session values", session.Values).Info("session")
 	if _, ok := session.Values["role"]; !ok {
 		// return unauthorized
 		log.Warnf("unauthorized request from %s", r.RemoteAddr)
