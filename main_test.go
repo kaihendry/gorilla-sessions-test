@@ -8,7 +8,20 @@ import (
 	"testing"
 )
 
-func TestCount(t *testing.T) {
+func headerToCookie(h http.Header) *http.Cookie {
+	for _, cookie := range h["Set-Cookie"] {
+		if strings.Contains(cookie, sessionName) {
+			return &http.Cookie{
+				Name: "foobar",
+				// TODO: Refactor to use a sane parser
+				Value: strings.Split(cookie, "=")[1] + "==",
+			}
+		}
+	}
+	return nil
+}
+
+func TestMyHandler(t *testing.T) {
 
 	w := httptest.NewRecorder()
 	r, err := http.NewRequest(http.MethodGet, "/", nil)
@@ -29,15 +42,7 @@ func TestCount(t *testing.T) {
 		panic(err)
 	}
 
-	log.Println("cookie header", w.HeaderMap)
-	// convert w.HeaderMap to *http.Cookie
-	cookies := []*http.Cookie{}
-	for _, v := range w.HeaderMap["Set-Cookie"] {
-		cookies = append(cookies, &http.Cookie{
-			Name:  strings.Split(v, "=")[0],
-			Value: strings.Split(v, "=")[1] + "==",
-		})
-	}
+	cookie := headerToCookie(w.Header())
 
 	tests := []struct {
 		name               string
@@ -47,7 +52,7 @@ func TestCount(t *testing.T) {
 		expectedHeader     string
 	}{
 		{"no cookie", "/", nil, http.StatusUnauthorized, ""},
-		{"role in session", "/", cookies[0], http.StatusOK, role},
+		{"role in session", "/", cookie, http.StatusOK, role},
 	}
 
 	s := newServer(true)
