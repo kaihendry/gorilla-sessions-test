@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	"html/template"
 	"net/http"
 	"os"
 
@@ -34,25 +35,24 @@ func MyHandler(w http.ResponseWriter, r *http.Request) {
 	if _, ok := session.Values["role"]; !ok {
 		// return unauthorized
 		log.Warnf("unauthorized request from %s", r.RemoteAddr)
-		// 		t, err := template.New("foo").Parse(`<!DOCTYPE html>
-		// <html>
-		// <head>
-		// <meta charset="utf-8" />
-		// </head>
-		// <body>
-		// <form action="/setRole" method="post">
-		// <input type="text" name="role" />
-		// <input type="submit" value="Set Role" />
-		// </body>
-		// </html>`)
-		// 		if err != nil {
-		// 			panic(err)
-		// 		}
-		// 		err = t.Execute(w, nil)
-		// 		if err != nil {
-		// 			panic(err)
-		// 		}
-		http.Error(w, "Unauthorized", http.StatusUnauthorized)
+		t, err := template.New("foo").Parse(`<!DOCTYPE html>
+		<html>
+		<head>
+		<meta charset="utf-8" />
+		</head>
+		<body>
+		<form action="/setRole" method="post">
+		<input type="text" name="role" />
+		<input type="submit" value="Set Role" />
+		</body>
+		</html>`)
+		if err != nil {
+			panic(err)
+		}
+		err = t.Execute(w, nil)
+		if err != nil {
+			panic(err)
+		}
 		return
 	}
 
